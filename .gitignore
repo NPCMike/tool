@@ -1,0 +1,7 @@
+# Browser-automation artifacts
+.playwright-mcp/
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
+*.log

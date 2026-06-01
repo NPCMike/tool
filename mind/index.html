@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mind Map Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <button class="icon-button" data-action="new-map" title="新心智圖" aria-label="新心智圖">
+            <svg><use href="#icon-file-plus"></use></svg>
+          </button>
+          <div class="brand-copy">
+            <strong>Mind Map Studio</strong>
+            <span id="mapTitle">workspace.mind</span>
+          </div>
+        </div>
+
+        <div class="toolbar" aria-label="主要工具列">
+          <button class="icon-button" data-action="undo" title="復原" aria-label="復原">
+            <svg><use href="#icon-undo"></use></svg>
+          </button>
+          <button class="icon-button" data-action="redo" title="重做" aria-label="重做">
+            <svg><use href="#icon-redo"></use></svg>
+          </button>
+          <span class="divider" aria-hidden="true"></span>
+          <button class="icon-button primary" data-action="add-child" title="新增子主題" aria-label="新增子主題">
+            <svg><use href="#icon-plus-node"></use></svg>
+          </button>
+          <button class="icon-button" data-action="add-sibling" title="新增同層主題" aria-label="新增同層主題">
+            <svg><use href="#icon-sibling"></use></svg>
+          </button>
+          <button class="icon-button" data-action="toggle-collapse" title="收合或展開" aria-label="收合或展開">
+            <svg><use href="#icon-fold"></use></svg>
+          </button>
+          <button class="icon-button" data-action="start-relationship" title="新增或移除關聯線 (R)" aria-label="新增或移除關聯線 (R)">
+            <svg><use href="#icon-relation"></use></svg>
+          </button>
+          <button class="icon-button" data-action="toggle-boundary" title="分支外框" aria-label="分支外框">
+            <svg><use href="#icon-boundary"></use></svg>
+          </button>
+          <button class="icon-button" data-action="cycle-marker" title="切換標記" aria-label="切換標記">
+            <svg><use href="#icon-marker"></use></svg>
+          </button>
+          <button class="icon-button danger" data-action="delete-topic" title="刪除主題" aria-label="刪除主題">
+            <svg><use href="#icon-trash"></use></svg>
+          </button>
+          <span class="divider" aria-hidden="true"></span>
+          <button class="icon-button" data-action="fit" title="適合畫面" aria-label="適合畫面">
+            <svg><use href="#icon-fit"></use></svg>
+          </button>
+          <button class="icon-button" data-action="zoom-out" title="縮小" aria-label="縮小">
+            <svg><use href="#icon-minus"></use></svg>
+          </button>
+          <span class="zoom-readout" id="zoomReadout">100%</span>
+          <button class="icon-button" data-action="zoom-in" title="放大" aria-label="放大">
+            <svg><use href="#icon-plus"></use></svg>
+          </button>
+        </div>
+
+        <div class="file-tools">
+          <button class="icon-button" data-action="import" title="匯入" aria-label="匯入">
+            <svg><use href="#icon-upload"></use></svg>
+          </button>
+          <div class="export-wrap">
+            <button class="icon-button" data-action="export" title="匯出" aria-label="匯出" aria-haspopup="true">
+              <svg><use href="#icon-download"></use></svg>
+            </button>
+            <div id="exportMenu" class="export-menu" hidden role="menu">
+              <span class="export-scope" id="exportScope">匯出整張圖</span>
+              <button type="button" data-export="png">PNG 圖片</button>
+              <button type="button" data-export="svg">SVG 向量</button>
+              <button type="button" data-export="json">JSON 檔</button>
+            </div>
+          </div>
+          <input id="fileInput" type="file" accept="application/json,.json" hidden />
+        </div>
+      </header>
+
+      <main class="workspace-layout">
+        <section class="canvas-shell" aria-label="心智圖畫布">
+          <div id="canvas" class="canvas" tabindex="0">
+            <div id="world" class="world">
+              <svg id="linkLayer" class="link-layer" aria-hidden="true"></svg>
+              <div id="topicLayer" class="topic-layer"></div>
+              <div id="dropIndicator" class="drop-indicator" hidden></div>
+            </div>
+            <div id="marquee" class="marquee" hidden></div>
+          </div>
+          <div id="searchBar" class="search-bar" hidden>
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <input id="searchInput" type="text" placeholder="搜尋主題…" autocomplete="off" />
+            <span id="searchCount" class="search-count">0/0</span>
+            <button type="button" data-search="prev" title="上一個 (Shift+Enter)" aria-label="上一個">↑</button>
+            <button type="button" data-search="next" title="下一個 (Enter)" aria-label="下一個">↓</button>
+            <button type="button" data-search="close" title="關閉 (Esc)" aria-label="關閉">✕</button>
+          </div>
+          <div class="canvas-status">
+            <span id="selectionStatus">中心主題</span>
+            <span id="autosaveStatus">已儲存</span>
+          </div>
+        </section>
+
+        <aside class="inspector" aria-label="格式">
+          <div class="panel-head">
+            <h2>格式</h2>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">主題</span>
+            <div id="themeControl" class="theme-swatches"></div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">字體樣式</span>
+            <div class="textstyle-row">
+              <div class="segmented" id="textStyleControl">
+                <button data-style="bold" title="粗體" style="font-weight: 800">B</button>
+                <button data-style="italic" title="斜體" style="font-style: italic">I</button>
+              </div>
+              <input id="textColorInput" type="color" title="文字色" aria-label="文字色" />
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">顏色</span>
+            <div id="colorSwatches" class="swatches"></div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">標記</span>
+            <div class="segmented marker-control" id="markerControl"></div>
+          </div>
+
+          <label class="toggle-field">
+            <span>分支外框</span>
+            <input id="boundaryToggle" type="checkbox" />
+            <i aria-hidden="true"></i>
+          </label>
+
+          <div class="control-group">
+            <span class="control-label">形狀</span>
+            <div class="segmented" id="shapeControl">
+              <button data-shape="round">圓角</button>
+              <button data-shape="capsule">膠囊</button>
+              <button data-shape="underline">底線</button>
+            </div>
+          </div>
+
+          <label class="field compact">
+            <span>字級</span>
+            <input id="fontSizeInput" type="range" min="13" max="28" step="1" />
+          </label>
+
+          <div class="control-group">
+            <span class="control-label">結構</span>
+            <div class="segmented" id="structureControl">
+              <button data-structure="map">發散</button>
+              <button data-structure="right">向右</button>
+              <button data-structure="down">向下</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">分支</span>
+            <div class="segmented" id="sideControl">
+              <button data-side="left">左</button>
+              <button data-side="right">右</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">線條</span>
+            <div class="segmented" id="lineControl">
+              <button data-line="curve">曲線</button>
+              <button data-line="elbow">折線</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-label">線框</span>
+            <div class="segmented" id="sketchControl">
+              <button data-sketch="hand">手繪</button>
+              <button data-sketch="clean">一般</button>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>超連結 (K)</span>
+            <input id="linkInput" type="url" autocomplete="off" placeholder="https://" />
+          </label>
+
+          <label class="field">
+            <span>標籤（逗號分隔）</span>
+            <input id="tagsInput" type="text" autocomplete="off" placeholder="例如：重要, 待辦" />
+          </label>
+
+          <div class="control-group">
+            <span class="control-label">圖片</span>
+            <div class="image-row">
+              <button type="button" id="imagePick">插入圖片</button>
+              <button type="button" id="imageClear">移除</button>
+            </div>
+            <input id="imageInput" type="file" accept="image/*" hidden />
+          </div>
+
+          <label class="field notes-field">
+            <span>備註</span>
+            <textarea id="notesInput" rows="6"></textarea>
+          </label>
+        </aside>
+      </main>
+    </div>
+
+    <div id="contextMenu" class="context-menu" hidden role="menu"></div>
+
+    <div id="lightbox" class="lightbox" hidden><img alt="圖片預覽" /></div>
+
+    <div id="richToolbar" class="rich-toolbar" hidden>
+      <button type="button" data-rich="bold" title="粗體" style="font-weight: 800">B</button>
+      <button type="button" data-rich="italic" title="斜體" style="font-style: italic">I</button>
+      <span class="rich-sep" aria-hidden="true"></span>
+      <button type="button" class="rich-color" data-rich-color="#1b1b1f" style="--c: #1b1b1f" title="黑"></button>
+      <button type="button" class="rich-color" data-rich-color="#d1413c" style="--c: #d1413c" title="紅"></button>
+      <button type="button" class="rich-color" data-rich-color="#d97706" style="--c: #d97706" title="橘"></button>
+      <button type="button" class="rich-color" data-rich-color="#15803d" style="--c: #15803d" title="綠"></button>
+      <button type="button" class="rich-color" data-rich-color="#1d4ed8" style="--c: #1d4ed8" title="藍"></button>
+      <button type="button" class="rich-color" data-rich-color="#7c3aed" style="--c: #7c3aed" title="紫"></button>
+    </div>
+
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-file-plus" viewBox="0 0 24 24">
+        <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>
+        <path d="M14 2v5h5M12 11v6M9 14h6"></path>
+      </symbol>
+      <symbol id="icon-undo" viewBox="0 0 24 24">
+        <path d="M9 14 4 9l5-5"></path>
+        <path d="M4 9h10a6 6 0 1 1-4.2 10.3"></path>
+      </symbol>
+      <symbol id="icon-redo" viewBox="0 0 24 24">
+        <path d="m15 14 5-5-5-5"></path>
+        <path d="M20 9H10a6 6 0 1 0 4.2 10.3"></path>
+      </symbol>
+      <symbol id="icon-plus-node" viewBox="0 0 24 24">
+        <rect x="2.5" y="8.5" width="8.5" height="7" rx="2"></rect>
+        <path d="M11 12h4.5"></path>
+        <path d="M18.5 9.5v5M16 12h5"></path>
+      </symbol>
+      <symbol id="icon-sibling" viewBox="0 0 24 24">
+        <rect x="3" y="3.5" width="11" height="6.5" rx="2"></rect>
+        <rect x="3" y="14" width="11" height="6.5" rx="2"></rect>
+        <path d="M19 14.7v5M16.5 17.2h5"></path>
+      </symbol>
+      <symbol id="icon-fold" viewBox="0 0 24 24">
+        <path d="M8 6h13M8 12h13M8 18h13"></path>
+        <path d="m3 9 3 3-3 3"></path>
+      </symbol>
+      <symbol id="icon-relation" viewBox="0 0 24 24">
+        <path d="M7 7c6 0 4 10 10 10" stroke-dasharray="2.6 2.6"></path>
+        <path d="m14 14 3 3-4 1"></path>
+        <circle cx="6" cy="7" r="2.5"></circle>
+        <circle cx="18" cy="17" r="2.5"></circle>
+      </symbol>
+      <symbol id="icon-boundary" viewBox="0 0 24 24">
+        <rect x="4" y="5" width="16" height="14" rx="4"></rect>
+        <path d="M8 9h8M8 15h4"></path>
+      </symbol>
+      <symbol id="icon-marker" viewBox="0 0 24 24">
+        <path d="M12 3.5 14.6 9l5.9.8-4.3 4.2 1 5.9L12 17.1l-5.2 2.8 1-5.9-4.3-4.2 5.9-.8z"></path>
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24">
+        <path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6"></path>
+      </symbol>
+      <symbol id="icon-fit" viewBox="0 0 24 24">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M21 16v3a2 2 0 0 1-2 2h-3"></path>
+        <rect x="8" y="8" width="8" height="8" rx="2"></rect>
+      </symbol>
+      <symbol id="icon-minus" viewBox="0 0 24 24">
+        <path d="M5 12h14"></path>
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14"></path>
+      </symbol>
+      <symbol id="icon-upload" viewBox="0 0 24 24">
+        <path d="M12 16V4M7 9l5-5 5 5"></path>
+        <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path>
+      </symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24">
+        <path d="M12 4v12M7 11l5 5 5-5"></path>
+        <path d="M4 20h16"></path>
+      </symbol>
+      <symbol id="icon-target" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+      </symbol>
+    </svg>
+
+    <script src="vendor/rough.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
